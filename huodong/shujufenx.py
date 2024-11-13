@@ -40,28 +40,38 @@ class fuben(SaoDangFb):
                 print '找到张昭'
                 gid = v['id']
         lists = '0,%s,0,%s,0,0,0,0,0' % (gid, caiid)
-        print self.action(c='matrix', m='update_matrix', list=lists, mid=1)
+        status = self.action(c='matrix', m='update_matrix', list=lists, mid=1)
+        if status
         # 队武将突飞
-        status = 1
         index_info = self.action(c='practice', m='index')
         # 训练武将，
-        self.action(c='practice', m='practice_start', gid=gid, pid=pid, type=2)
-        freetimes = index_info['freetimes']  # 突飞卡
-        isturn = index_info['list']['1']['isturn']  # 武将师是否到转生级别
-        wjlevel = index_info['list']['1']['level']
-        print '武将等级', wjlevel
-        while status == 1 and freetimes != '0':  # 队伍将进行突飞
-            if int(isturn) == 1 and int(wjlevel) <= level:
-                print '武将转生'
-                print self.action(c='practice', m='turn', gid=gid)
-            self.action(c='practice', m='mop', times=100, gid=gid)
-            self.action(c='practice', m='mop', times=50, gid=gid)
-            self.action(c='practice', m='mop', times=10, gid=gid)
-            self.action(c='practice', m='mop', times=5, gid=gid)
-            index_info = self.action(c='practice', m='index')
-            freetimes = index_info['freetimes']
-            info = self.action(c='practice', m='go_leap', gid=gid)  # 武将突飞一次
-            status = info['status']
+        formdata = {
+            "gid":gid,
+            "pid":pid,
+            "type":2
+        }
+        status = self.action(c='practice', m='practice_start', body=formdata)
+        if status:
+            print '开始训练'
+        for k,v in index_info['list'].items():
+            if v['name'] == '蔡文姬':
+                freetimes = index_info['freetimes']  # 突飞卡
+                isturn = index_info['list'][k]['isturn']  # 武将师是否到转生级别
+                wjlevel = index_info['list'][k]['level']
+                print '武将等级', wjlevel
+                status = 1
+                while status == 1 and freetimes != 0:  # 队伍将进行突飞
+                    if int(isturn) == 1 and int(wjlevel) <= level:
+                        print '武将转生'
+                        print self.action(c='practice', m='turn', gid=gid)
+                    self.action(c='practice', m='mop', times=100, gid=gid)
+                    self.action(c='practice', m='mop', times=50, gid=gid)
+                    self.action(c='practice', m='mop', times=10, gid=gid)
+                    self.action(c='practice', m='mop', times=5, gid=gid)
+                    index_info = self.action(c='practice', m='index')
+                    freetimes = index_info['freetimes']
+                    info = self.action(c='practice', m='go_leap', gid=gid)  # 武将突飞一次
+                    status = info['status']
 
     def tufei(self, name, level):  # 对武将突飞
         try:
@@ -89,6 +99,7 @@ class fuben(SaoDangFb):
             print '武将等级', wjlevel
             print freetimes
             while status == 1 and freetimes != '0':  # 队伍将进行突飞
+                print '武将突飞'
                 if int(isturn) == 1 and int(wjlevel) <= level:
                     print '武将转生'
                     self.action(c='practice', m='turn', gid=gid)
@@ -100,11 +111,12 @@ class fuben(SaoDangFb):
                 freetimes = index_info['freetimes']
                 info = self.action(c='practice', m='go_leap', gid=gid)  # 武将突飞一次
                 status = info['status']
+
         except:
             pass
 
-    def mapscene(self):  # 领取通关奖励
-        self.action(c='map', m='get_scene_list', l=1, v=2018071801)
+    def mapscene(self,level):  # 领取通关奖励
+        self.action(c='map', m='get_scene_list', l=level, v=2018071801)
         self.action(c='map', m='get_newreward_index', levelid=1, v=2018071801)
         self.action(c='map', m='get_newreward', id=1, v=2018071801)
         self.action(c='map', m='get_newreward', id=2, v=2018071801)
@@ -123,8 +135,8 @@ class fuben(SaoDangFb):
             print '次数为0次'
 
     def join(self):  # 申请加入你是学姐国家
-        print self.action(c='country', m='search', name='%E6%98%AF%E4%BD%A0%E5%AD%A6%E5%A7%90')
-        print self.action(c='country', m='apply', id=250000000286, page=1)
+        # print self.action(c='country', m='search', name='%E6%98%AF%E4%BD%A0%E5%AD%A6%E5%A7%90')
+        print self.action(c='country', m='apply', id=14900000000360, page=1)
 
 
 
@@ -171,11 +183,10 @@ class fuben(SaoDangFb):
 
     def strengthen(self, id):  # 强化装备
         levelinfo = self.level()
-        print levelinfo
+
         self.action(c='general', m='index')
         self.action(c='strengthen', m='index')
         id_info = self.action(c='strengthen', m='strengthen_info', id=id)
-        print id_info
         newlevel = id_info['info']['level']  # 获取当前装备的强化等级
         print '当前等级', newlevel
         try:
@@ -196,16 +207,12 @@ class fuben(SaoDangFb):
             if item['type'] == 1:
                 self.action(c='levelgift', m='get_reward', level=item['level'])  # 获取30级奖励
 
-    def  saodang(self, num=13):  # 攻击小兵
-        memberindex = self.action(c='member', m='index')
-        missionlevel = int(memberindex['missionlevel'])
-        missionsite = int(memberindex['missionsite'])
-        missionstage = int(memberindex['missionstage'])
-        map = self.action(c='map', m='get_mission_list')
+    def saodang(self, missionlevel,missionsite,missionstage,num=13):  # 攻击小兵
+
         exit_code = 1
+        print 'saosang',missionlevel
         if exit_code == 1:
-            print num
-            for level in range(missionlevel, num):  # 遍历每一个图
+            for level in range(missionlevel, 13):  # 遍历每一个图
                 print 'action  %s mission' % level
                 result = self.action(c='map', m='get_scene_list', l=level)
                 try:
@@ -214,10 +221,10 @@ class fuben(SaoDangFb):
                     print e
                     self.p(result)
                     return
-                for i in range(missionstage, site):  # 遍历关卡图次数
+                for i in range(missionsite, site):  # 遍历关卡图次数
                     print 'site', i
                     status = 1
-                    for id in range(1, 11):  # 遍历10个小兵
+                    for id in range(missionstage, 11):  # 遍历10个小兵
                         try:
                             # 获取首杀状态，1为首杀，-1为已经击杀
                             first = self.action(c='map', m='mission', l=level, s=i, id=id)['info']['first']
@@ -326,7 +333,14 @@ class fuben(SaoDangFb):
         for num in range(self.numbers):
             self.action(c='lottery', m='action')
         print '抽奖结束'
-
+    def discount_carnival(self):
+        self.action(c='discount_carnival',m='sign_index')
+        cash_cow_index=self.action(c='discount_carnival',m='cash_cow_index')
+        shake_num = cash_cow_index['shake_num']
+        fordata = {
+            "num":shake_num
+        }
+        cash_cow_index = self.action(c='discount_carnival', m='shake',body=fordata)
 
 if __name__ == '__main__':
     def act(user, apass, addr):

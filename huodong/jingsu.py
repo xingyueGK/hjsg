@@ -31,51 +31,60 @@ def act(username,passwd,addr):
     action = fuben(username,passwd,addr)
     try:
         print '账号：%s   等级为：%s' % (username, action.level())
-    except :
+        memberindex = action.action(c='member', m='index')
+        missionlevel = int(memberindex['missionlevel'])
+        missionsite = int(memberindex['missionsite'])
+        missionstage = int(memberindex['missionstage'])
+    except Exception as e :
+        print e
         print 'zhanghao ###################################### ',username
     if action.level() >= 157:
         exit()
     if  action.level() <10:
-        action.saodang(1)#16级 失败退出
+        print '10ji'
+        action.saodang(missionlevel,missionsite,missionstage)#16级 失败退出
         action.levelgift()  # 领取16级奖励
     #扫荡失败以后获取2级别装备，然后强化后并穿戴上去
     if action.level() < 25:
+        print '25ji'
         gid,uid = action.general(7)#第一次的都是2级装备
         print gid,uid
         for i in uid:
             for etype,v in i.items():
                 action.strengthen(v)
                 action.equip(gid,v,etype)
-        action.saodang(1)#26级失败退出
+        action.saodang(missionlevel,missionsite,missionstage)#26级失败退出
         for i in uid:
             for etype, v in i.items():
                 action.strengthen(v)
     if action.level() < 35:
-        action.mapscene()#领取通关奖励
+        print '35ji'
+
+        action.mapscene(missionlevel)#领取通关奖励
         action.levelgift()  # 领取30级奖励
-        # action.muster()  # 武将出征并上阵，并突飞到30级
+        action.muster()  # 武将出征并上阵，并突飞到30级
         #action.morra()#节节高
-        # gid, uid = action.general(25)#获取三级装备，再次强化，并给武将穿戴上
-        # for i in uid:
-        #     for etype, v in i.items():
-        #         action.strengthen(v)
-        #         action.equip(gid, v, etype)
-        #     action.saodang(2)  # 级失败退出
-        # for i in uid:
-        #     for etype, v in i.items():
-        #         action.strengthen(v)
-        #         action.equip(gid, v, etype)
-        # action.saodang(2)#30级失败退出从第二个图开始
+        gid, uid = action.general(25)#获取三级装备，再次强化，并给武将穿戴上
+        for i in uid:
+            for etype, v in i.items():
+                action.strengthen(v)
+                action.equip(gid, v, etype)
+            action.saodang(missionlevel,missionsite,missionstage)  # 级失败退出
+        for i in uid:
+            for etype, v in i.items():
+                action.strengthen(v)
+                action.equip(gid, v, etype)
+        action.saodang(missionlevel,missionsite,missionstage)#30级失败退出从第二个图开始
     if action.level()<50:
         for i  in range(2):
             action.mainquest()#获取所有活动
-        #gid, uid = action.general(25)#获取25级需要穿戴的装备强化
-        # for i in uid:
-        #     for etype, v in i.items():
-        #         action.strengthen(v)
-        #         action.equip(gid, v, etype)
-        # action.muster()  # 再次突飞
-        action.saodang(2)
+        gid, uid = action.general(25)#获取25级需要穿戴的装备强化
+        for i in uid:
+            for etype, v in i.items():
+                action.strengthen(v)
+                action.equip(gid, v, etype)
+        action.muster()  # 再次突飞
+        action.saodang(missionlevel,missionsite,missionstage)
     if action.level()  <70:#领取前60次奖励
 
         # action.muster()#对武将突飞
@@ -121,12 +130,12 @@ def act(username,passwd,addr):
         # for i in range(10, 180, 10):
         #     a= action.action(c='map',m='get_mission_reward',id=i)
         action.saodang(20)
-def joi(username,passwd):
+def joi(username,passwd,addr):
     #国家海外贸易
-    action = fuben(username,passwd)
-    #action.join()加入国家
-    print '账号：%s   等级为：%s' % (username, action.level())
-    action.overseastrade()
+    action = fuben(username,passwd,addr)
+    action.join()#加入国家
+    # print '账号：%s   等级为：%s' % (username, action.level())
+    # action.overseastrade()
 def fk(username,passwd,addr):
     #福卡活动
     action = activity(username,passwd,addr)
@@ -195,12 +204,29 @@ def wjleveup(username, passwd,addr):
 def peiyang(username,passwd,addr):
     action = activity(username, passwd,addr)
     action.peiyang('张昭')
-with open('../users/xing.txt', 'r') as f:
+
+def carnival(username,passwd,addr):
+    action = activity(username, passwd,addr)
+    action.discount_carnival()
+def run(username,passwd,addr):
+    action = activity(username, passwd,addr)
+
+    memberindex = action.action(c='member', m='index')
+    action.p(memberindex)
+    missionlevel = int(memberindex['missionlevel'])
+    missionsite = int(memberindex['missionsite'])
+    missionstage = int(memberindex['missionstage'])
+    map = action.action(c='map', m='get_mission_list')
+    exit_code = 1
+    print 'saosang', missionlevel
+    if exit_code == 1:
+        for level in range(missionlevel, 13):  # 遍历每一个图
+            print 'action  %s mission' % level
+with open('../users/xing.py', 'r') as f:
     for i in f:
-        if i.strip():
-            str = i.strip().split()[0]
-            name = str
-            addr = 144
+        if i.strip() and not i.startswith('#'):
+            name = i.split()[0]
             passwd = i.split()[1]
+            addr = i.split()[2]
             t1 = threading.Thread(target=act,args=(name,passwd,addr))
             t1.start()

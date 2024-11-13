@@ -1952,12 +1952,12 @@ if __name__ == '__main__':
 
 
     def dg():
-        cont = ['150.txt', '150num.txt', '150nm.txt', '150taohua.txt', '150bank.txt']
+        # cont = ['150.txt', '150num.txt', '150nm.txt', '150taohua.txt', '150bank.txt']
         # cont = ['autouser.txt', 'user.txt', 'alluser.txt', 'duguyi.txt', '149cnm.txt', '149dgj.txt', '149gx1.txt',
         # '149xx.txt',
         # '149xb.txt', '149lwzs.txt', '21user.txt', '150.txt', '150gx.txt', '150nm.txt', '150num.txt',
         # '150taohua.txt', '150bank.txt']
-
+        cont = ['xing.txt']
         for t in cont:
             with open('../users/%s' % t, 'r') as f:
                 for i in f:
@@ -1965,7 +1965,7 @@ if __name__ == '__main__':
                         user = i.split()[0]
                         passwd = i.split()[1]
                         addr = i.split()[2]
-                        for i in range(1000):
+                        for i in range(5):
                             t1 = threading.Thread(target=userinfo, args=(user, passwd, addr))
                             q.put(t1)
 
@@ -1975,16 +1975,12 @@ if __name__ == '__main__':
     # chat('123456789', 987654321, 135)
     # dg()
     # gm()
-    chuan()
-    while not q.empty():
-        thread = []
-        for i in xrange(50):
-            try:
-                thread.append(q.get_nowait())
-            except:
-                pass
-        for i in thread:
-            i.start()
-            # i.join()
-        for i in thread:
-            i.join()
+    # chuan()
+    with open('../users/xing.txt', 'r') as f:
+        for i in f:
+            if i.strip():
+                name = i.split()[0]
+                passwd = i.split()[1]
+                addr = i.split()[2]
+                t1 = threading.Thread(target=userinfo, args=(name, passwd, addr))
+                t1.start()

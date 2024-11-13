@@ -9,10 +9,11 @@ import redis, random
 from logging.handlers import RotatingFileHandler
 import logging
 import hashlib
-
+#from datakey import js
 reload(sys)
 sys.setdefaultencoding('utf-8')
 import threading
+from datakey_js_python import initKey
 
 headers = {
     'Accept-Encoding': 'gzip, deflate',
@@ -32,7 +33,7 @@ postheaders = {
     "Referer": "http://game.hjsg.zhanyougame.com/index.html",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36",
 }
-
+#EXECJS_RUNTIME=os.environ["EXECJS_RUNTIME"]
 
 class TokenErr(Exception):
     pass
@@ -46,11 +47,12 @@ class SaoDangFb(object):
         self.passwd = passwd
         self.token_uid = ''
         self.token = self.get_token(self.num, self.user, self.passwd)
-        self.url = 'http://s{0}.game.hanjiangsanguo.com/index.php?{1}&v=0&channel=150&lang=zh-cn&token={2}&token_uid={3}&'
+        #self.url = 'http://s{0}.game.hanjiangsanguo.com/index.php?{1}&v=0&channel=150&lang=zh-cn&token={2}&token_uid={3}&'
+        self.url = 'http://s{0}.game.zhanchenggame.com/index.php?{1}&v=0&channel=150&lang=zh-cn&token={2}&token_uid={3}&'
 
     @staticmethod
     def get_addr(num, u, p):
-        url = 'http://uc.game.hanjiangsanguo.com/index.php?&c=user&m=login&&token=&channel=150&lang=zh-cn&rand=157355135868932'
+        url = 'http://uc.game.zhanchenggame.com/index.php?&c=user&m=login&&token=&channel=150&lang=zh-cn&rand=157355135868932'
         if num:
             return num
         else:
@@ -65,7 +67,7 @@ class SaoDangFb(object):
 
     @staticmethod
     def get_token(num, user, passwd):
-        pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+        pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
         _redis = redis.StrictRedis(connection_pool=pool)
         try:
             if _redis.hget(num, user):
@@ -73,8 +75,9 @@ class SaoDangFb(object):
                 rand = str(int(time.time()))
                 a = token + rand
                 te = hashlib.md5(a).hexdigest()
-                signature = hashlib.md5(te + "a4c13b9ecf81").hexdigest()
-                login = 'http://s{num}.game.hanjiangsanguo.com/index.php?c=member&m=index&v=0&token={token}&channel=150&lang=zh-cn&rand={rand}&signature={signature}'.format(
+                #signature = js.call("initKey",token,rand)
+                signature = initKey(token,rand)
+                login = 'http://s{num}.game.zhanchenggame.com/index.php?c=member&m=index&v=0&token={token}&channel=150&lang=zh-cn&rand={rand}&signature={signature}'.format(
                     num=num, token=token, rand=rand, signature=signature)
 
                 r = requests.get(login)
@@ -91,8 +94,9 @@ class SaoDangFb(object):
                 rand = str(int(time.time()))
                 a = "" + rand
                 te = hashlib.md5(a).hexdigest()
-                signature = hashlib.md5(te + "a4c13b9ecf81").hexdigest()
-                url = 'http://s{num}.game.hanjiangsanguo.com/index.php?v=0&c=login&&m=user&&token=&channel=150&lang=zh-cn&rand={rand}&signature={signature}'.format(
+                #signature = js.call("initKey","",rand)
+                signature = initKey("",rand)
+                url = 'http://s{num}.game.zhanchenggame.com/index.php?v=0&c=login&&m=user&&token=&channel=150&lang=zh-cn&rand={rand}&signature={signature}'.format(
                     num=num, rand=rand, signature=signature)
                 formdata = {
                     "mac": "00:00:00:00:00:00",
@@ -141,7 +145,8 @@ class SaoDangFb(object):
             print '*' * 10, self.token
             exit(101)
         self.te = hashlib.md5(self.a).hexdigest()
-        self.signature = hashlib.md5(self.te + "a4c13b9ecf81").hexdigest()
+        #self.signature = js.call("initKey",self.token ,self.rand)
+        self.signature = initKey(self.token ,self.rand)
         self.urlf = self.url.format(self.num, self.data, self.token,
                                     self.token_uid) + 'rand={rand}&signature={signature}'.format(rand=self.rand,signature=self.signature)
         #postheaders['Host'] = 's{addr}.game.hanjiangsanguo.com'.format(addr=self.num)
@@ -179,7 +184,10 @@ class SaoDangFb(object):
                 if status == 1 or status == 0:
                     return serverinfo
                 else:
-                    print status,serverinfo['msg']
+                    try:
+                         print status,serverinfo['msg']
+                    except KeyError as e:
+                         print status,serverinfo['message']
             except Exception as e:
                 print e,self.p(serverinfo)
             return serverinfo
@@ -256,7 +264,7 @@ class MyLog(object):
         else:
             print('The job worked :)')
 
-    def MyLog(self, logpath=None, logname='mylog.log'):
+    def MyLog(self,logpath=None, logname='hjsg.log'):
         """
         :param logpath: dir
         :param logname: str(name)
@@ -270,15 +278,27 @@ class MyLog(object):
                 _log = os.path.join(logpath, logname)
         else:
             _log = logname
-
+            # create console handler and set level to debug
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        # create formatter for console handler
+        formatter = logging.Formatter('%(asctime)s - %(name)s - [%(username)s:%(addr)s] - %(levelname)s - %(message)s')
+        # add formatter to console handler
+        ch.setFormatter(formatter)
         format = logging.Formatter(
             '%(asctime)s %(filename)s[line:%(lineno)d] [%(username)s:%(addr)s] %(levelname)s %(message)s')
         logger = logging.getLogger(__name__)
+        # 这为清空当前文件的logging 因为logging会包含所有的文件的logging
+        logging.Logger.manager.loggerDict.pop(__name__)
+        logger.handlers = []
+        # 然后再次移除当前文件logging配置
         logger.setLevel(logging.INFO)
-        handler = RotatingFileHandler(_log, mode='a', maxBytes=1024 * 1024, backupCount=3, encoding='utf-8')
+        handler = RotatingFileHandler(_log, mode='a', maxBytes=1024 * 1024 * 1024, backupCount=3, encoding='utf-8')
         handler.setLevel(logging.INFO)
         handler.setFormatter(format)
         logger.addHandler(handler)
-        filter = ContextFilter()
-        logger.addFilter(filter)
+        logger.addHandler(ch)
+        filter_ = ContextFilter()
+        logger.addFilter(filter_)
+        logger.filter_=filter_
         return logger
