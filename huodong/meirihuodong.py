@@ -141,7 +141,7 @@ class act11th_anniversary_lottery(object):
         try:
             #shop_type = 10 是红包
             self.log.info('周年商城')
-            index = self.action(c='act11th_anniversary_lottery', m='shop_index')
+            index = self.action(c='act11th_anniversary', m='shop_index')
             if index['status'] == 1:
                 return index
             else:
@@ -155,8 +155,24 @@ class act11th_anniversary_lottery(object):
     def shop_lottery(self, type=1):
         try:
             #shop_type = 10 是红包
-            self.log.info('开盲盒')
-            index = self.action(c='act11th_anniversary_lottery', m='shop_lottery')
+
+            index = self.action(c='act11th_anniversary', m='shop_lottery')
+            if index['status'] == 1:
+                self.log.info('开盲盒成功')
+                return index
+            else:
+                self.log.info('开盲盒失败')
+                self.log.error(index['msg'])
+                return False
+        except:
+            traceback.print_exc()
+            self.log.error('开盲盒异常' + traceback.format_exc())
+            return False
+    def lottery_index(self, type=1):
+        try:
+            #shop_type = 10 是红包
+            self.log.info('福利抽奖')
+            index = self.action(c='act11th_anniversary', m='lottery_index')
             if index['status'] == 1:
                 return index
             else:
@@ -164,21 +180,41 @@ class act11th_anniversary_lottery(object):
                 return False
         except:
             traceback.print_exc()
-            self.log.error('开盲盒异常' + traceback.format_exc())
+            self.log.error('福利抽奖异常' + traceback.format_exc())
             return False
-
+    def act11th_anniversary_lottery(self):
+        try:
+            #shop_type = 10 是红包
+            self.log.info('开宝箱')
+            index = self.action(c='act11th_anniversary', m='lottery')
+            if index['status'] == 1:
+                return index
+            else:
+                self.log.error(index['msg'])
+                return False
+        except:
+            traceback.print_exc()
+            self.log.error('开宝箱异常' + traceback.format_exc())
+            return False
     def auto_act11th_anniversary_lottery(self):
         draw_reward_index = self.draw_reward_index()
         if draw_reward_index:
-            shop_type = ''
-            shop_detail = draw_reward_index['shop_detail']
-            for k,v in shop_detail.items():
-                shop_type = int(v['shop_type'])
-                break
-            if shop_type == 10 :
-                self.log.info('红包')
-                self.shop_lottery()
-
+            shop_index = self.shop_index()
+            if shop_index:
+                shop_type = ''
+                shop_detail = shop_index['shop_detail']
+                for k,v in shop_detail.items():
+                    shop_type = int(v['shop_type'])
+                    break
+                if shop_type == 10 :
+                    self.log.info('当前抽奖为红包')
+                    self.shop_lottery()
+            lottery_index = self.lottery_index()
+            if lottery_index:
+                lottery_times = int(lottery_index['lottery']['lottery_times'])
+                if lottery_times > 0 :
+                    for i in range(lottery_times):
+                        self.act11th_anniversary_lottery()
 
 class luck_pk(object):
     def luck_pk_index(self,type=1):

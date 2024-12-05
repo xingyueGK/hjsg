@@ -21,7 +21,7 @@ def p(message):
 
 
 def userinfo(username, password, addr):
-    s1.acquire()
+    # s1.acquire()
     action = shujufenx.fuben(username, password, addr)
     info = action.action(c='blackmarket', m='index')  # 获取黑市首页
     memberInfo = action.action(c='member', m='index')
@@ -46,7 +46,7 @@ def userinfo(username, password, addr):
         reputation, sign_times)
     userlist = [username, name, level, vip, countryName, act, silver, gold, info['info']['get2'], info['info']['get3'],
                 reputation, sign_times]
-    s1.release()
+    # s1.release(timeout=1)
     return userlist
 
 
@@ -1571,6 +1571,60 @@ class activity(fuben):
            self.action(c='quyuan_festival',m='poll_index')
            self.action(c='quyuan_festival',m='poll_reward')
            self.action(c='quyuan_festival',m='take_poll')
+    def apply_add_friends(self,name):
+        formdata= {
+            "nickname":name
+        }
+        search_friends= self.action(c='friend',m='search_friends',body=formdata)
+        for i in search_friends['user_list']:
+            if i['nickname'] ==name:
+                uid= i['uid']
+                formdata={
+                    "uid":uid
+                }
+                search_friends = self.action(c='friend', m='apply_add_friends',body=formdata)
+                try:
+                    print search_friends['msg']
+                    break
+                except:
+                     self.p(search_friends)
+                     break
+    def duibi(self):
+        try:
+            guojia_cd= self.action(c='war_college',m='index')['cd']
+            # jinsu_cd=self.action(c='map',m='get_reward_list')['race_dateline']
+            # if guojia_cd< jinsu_cd:
+            #     msg="%s %s %s %s"%(self.user,self.num,guojia_cd,jinsu_cd-guojia_cd)
+            #     print msg
+            print self.user,guojia_cd
+        except:
+            pass
+    def get_salary(self):
+        #领取国家工资，使用国家科技
+        self.action(c='country',m='storage')
+        self.action(c='country',m='get_salary')
+        formdata= {
+            "id":1,
+            "buy_number":1
+        }
+        for i in range(6):
+            self.action(c='country_taxes_shop', m='buy',body=formdata)
+        formdata ={
+            "need_general":6
+        }
+        self.action(c='war_college', m='use_buff',body=formdata)
+
+    def pawn_shop(self):
+        #上架战功
+        formdata = {
+            "site": 4,
+            "goods_id":13,
+            "num":10
+        }
+        self.action(c='pawn_shop', m='index')
+        self.action(c='pawn_shop', m='pawn_ticket_exchange_index')
+        self.action(c='pawn_shop', m='own_counter_index')
+        self.action(c='pawn_shop', m='counter_goods_put_on_sale',body=formdata)
 # 周年比购物start_advanced
 
 # def wx():#五行竞猜刷数据
@@ -1611,7 +1665,9 @@ if __name__ == '__main__':
 
     def act(user, apass, addr):
         action = activity(user, apass, addr)
-        action.get_talent()
+        # action.apply_add_friends(u'小东东')
+        # action.get_salary()
+        action.pawn_shop()
 
 
     def task(user, apass, addr):  # 节节高买突飞
@@ -1957,7 +2013,11 @@ if __name__ == '__main__':
         # '149xx.txt',
         # '149xb.txt', '149lwzs.txt', '21user.txt', '150.txt', '150gx.txt', '150nm.txt', '150num.txt',
         # '150taohua.txt', '150bank.txt']
-        cont = ['xing.txt']
+        #cont = ['xing.txt']
+        cont = ['149cnm.txt', '149dgj.txt', '149gx1.txt', '148gx.txt', '149xx.txt',
+                '149xb.txt', '149lwzs.txt',  'haiyun.txt',
+                'mengling.txt', 'aoruonan.txt']
+
         for t in cont:
             with open('../users/%s' % t, 'r') as f:
                 for i in f:
@@ -1965,10 +2025,20 @@ if __name__ == '__main__':
                         user = i.split()[0]
                         passwd = i.split()[1]
                         addr = i.split()[2]
-                        for i in range(5):
-                            t1 = threading.Thread(target=userinfo, args=(user, passwd, addr))
-                            q.put(t1)
+                        t1 = threading.Thread(target=userinfo, args=(user, passwd, addr))
+                        q.put(t1)
 
+        while not q.empty():
+            thread = []
+            for i in xrange(10):
+                try:
+                    thread.append(q.get_nowait())
+                except Exception as e:
+                    print e
+            for i in thread:
+                i.start()
+            for i in thread:
+                i.join()
 
     # chat('xingyue123', 413728161, 21)
     # chat('pock520',5553230,149)
@@ -1976,11 +2046,16 @@ if __name__ == '__main__':
     # dg()
     # gm()
     # chuan()
-    with open('../users/xing.txt', 'r') as f:
-        for i in f:
-            if i.strip():
-                name = i.split()[0]
-                passwd = i.split()[1]
-                addr = i.split()[2]
-                t1 = threading.Thread(target=userinfo, args=(name, passwd, addr))
-                t1.start()
+    # cont = ['149cnm.txt', '149dgj.txt', '149gx1.txt', '148gx.txt', '149xx.txt',
+    #         '149xb.txt', '149lwzs.txt', 'haiyun.txt',
+    #         'mengling.txt', 'aoruonan.txt']
+    cont = ['xing.py']
+    for t in cont:
+        with open('../users/%s' % t, 'r') as f:
+            for i in f:
+                if i.strip() and not i.startswith('#'):
+                    name = i.split()[0]
+                    passwd = i.split()[1]
+                    addr = i.split()[2]
+                    t1 = threading.Thread(target=userinfo, args=(name, passwd, addr))
+                    t1.start()

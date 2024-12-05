@@ -41,7 +41,7 @@ class fuben(SaoDangFb):
                 gid = v['id']
         lists = '0,%s,0,%s,0,0,0,0,0' % (gid, caiid)
         status = self.action(c='matrix', m='update_matrix', list=lists, mid=1)
-        if status
+
         # 队武将突飞
         index_info = self.action(c='practice', m='index')
         # 训练武将，
@@ -207,7 +207,7 @@ class fuben(SaoDangFb):
             if item['type'] == 1:
                 self.action(c='levelgift', m='get_reward', level=item['level'])  # 获取30级奖励
 
-    def saodang(self, missionlevel,missionsite,missionstage,num=13):  # 攻击小兵
+    def saodang(self, missionlevel=1,missionsite=1,missionstage=1,num=13):  # 攻击小兵
 
         exit_code = 1
         print 'saosang',missionlevel

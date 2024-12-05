@@ -233,14 +233,22 @@ class god_weapon_catalog(SaoDangFb):
                                 "id": id
                             }
                             action_result = self.action(c='map', m='action',body=formdata)
-                            status = action_result['status']
-                            if first == 1 and status == -5:
-                                self.log.error('攻击错误，参数%s'%str(formdata))
-                                self.log.error(action_result)
-                                exit_code = 2
-                                return exit_code
+                            if action_result:
+                                status = action_result['status']
+                                if status == -5:
+                                    self.log.error('攻击错误，参数%s' % str(formdata))
+                                    self.log.error(action_result)
+                                    exit_code = 2
+                                    return exit_code
+                                elif action_result['info']['win'] >0:
+                                    self.log.info('成功击败小兵')
+                                elif action_result['info']['win'] ==-3:
+                                    self.log.info('攻击小兵失败')
+                                    exit(5)
                             else:
-                                self.log.info('成功击败小兵')
+                                self.log.error(action_result)
+                                exit(222)
+                           
                         else:
                             self.log.info('alredy kill')
                     missionid=1#重置通关的关卡小兵位置信息
@@ -642,7 +650,7 @@ def run(user, apass, addr,lockpwd):
             #         action.strengthen(eid1_quality_equipments)#强化装备
             # action.strengthen(general_index_list['eid1']['id'])
             action.saodang(missionlevel, missionstage )
-        if 70 < action.level() < 120:  # 领取前60次奖励
+        if 70 <= action.level() < 120:  # 领取前60次奖励
             # action.muster(level=80)
             # gid, uid = action.general(25)  # 获取三级装备，再次强化，并给武将穿戴上
             # for i in uid:
@@ -671,7 +679,7 @@ def run(user, apass, addr,lockpwd):
             # 获取竞速元宝
             for i in range(10, 180, 10):
                 a= action.action(c='map',m='get_mission_reward',id=i)
-            # action.saodang(missionlevel, missionstage )
+            action.saodang(missionlevel, missionstage )
 
     except Exception as e:
         traceback.print_exc()

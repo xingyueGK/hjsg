@@ -39,6 +39,7 @@ class TokenErr(Exception):
     pass
 
 
+
 class SaoDangFb(object):
     def __init__(self, user, passwd, num):
         # 随机请求参数
@@ -53,17 +54,16 @@ class SaoDangFb(object):
     @staticmethod
     def get_addr(num, u, p):
         url = 'http://uc.game.zhanchenggame.com/index.php?&c=user&m=login&&token=&channel=150&lang=zh-cn&rand=157355135868932'
-        if num:
-            return num
+        result = requests.post(url, data={"u": u, "p": p}).json()
+        if result['status'] != 1:
+            print u+result['message']+"\r"
+            exit(result['status'])
         else:
-            result = requests.post(url, data={"u": u, "p": p}).json()
-            if result['status'] != 1:
-                print result['message']
-                exit(result['status'])
-            else:
-                for item in result['serverlist']:
-                    if item['selected'] == 1:
-                        return int(item['id'])
+            if num:
+                return num
+            for item in result['serverlist']:
+                if item['selected'] == 1:
+                    return int(item['id'])
 
     @staticmethod
     def get_token(num, user, passwd):
@@ -79,7 +79,6 @@ class SaoDangFb(object):
                 signature = initKey(token,rand)
                 login = 'http://s{num}.game.zhanchenggame.com/index.php?c=member&m=index&v=0&token={token}&channel=150&lang=zh-cn&rand={rand}&signature={signature}'.format(
                     num=num, token=token, rand=rand, signature=signature)
-
                 r = requests.get(login)
                 if r.text == '403':
                     raise TokenErr('token expire')
@@ -110,15 +109,16 @@ class SaoDangFb(object):
                     result = requests.post(url, headers=postheaders, data=formdata, timeout=20)
                     if result.status_code == 200:
                         if result.json()['status'] == 1:
-                            print user,url
                             token = result.json()['token']
                             _redis.hset(num, user, token)
                             if token:
                                 return token
                         else:
-                            print user, '账号密码不对'
+                            try:
+                                print  result.json()['message']
+                            except Exception as e:
+                                print '账号异常了'
                             exit(2)
-
             except Exception as e:
                 print user, e
                 exit(401)
@@ -150,7 +150,8 @@ class SaoDangFb(object):
         self.urlf = self.url.format(self.num, self.data, self.token,
                                     self.token_uid) + 'rand={rand}&signature={signature}'.format(rand=self.rand,signature=self.signature)
         #postheaders['Host'] = 's{addr}.game.hanjiangsanguo.com'.format(addr=self.num)
-        while num < 40:
+        sleep_time= 1
+        while num < 5:
             num += 1
             try:
                 if body:
@@ -160,10 +161,12 @@ class SaoDangFb(object):
                 if r.ok:
                     return r
                 elif r.status_code >= 500:
+                    time.sleep(1)
                     pass
             except Exception as e:
                 print 'post_url', e
-                time.sleep(1)
+                sleep_time+=1
+                time.sleep(sleep_time)
 
 
     def action(self, body=0, **kwargs):
@@ -171,6 +174,8 @@ class SaoDangFb(object):
         """
         action_data = kwargs
         try:
+            #每个请求降级一下太快了
+            time.sleep(random.uniform(0, 1))
             postresult = self.post_url(body, action_data)
             serverinfo = postresult.json(encoding="UTF-8")
             if serverinfo == 403:
@@ -189,18 +194,21 @@ class SaoDangFb(object):
                     except KeyError as e:
                          print status,serverinfo['message']
             except Exception as e:
-                print e,self.p(serverinfo)
+                pass
             return serverinfo
         except ValueError as e:
             print postresult.content, postresult.headers, postresult.raw, postresult.url
 
     def level(self):
-        userinfo = self.action(c='member', m='index')
-        level = int(userinfo['level'])
-        return level
+        try:
+            userinfo = self.action(c='member', m='index')
+            level = int(userinfo['level'])
+            return level
+        except:
+            return 1
 
     def unlock(self, pwd):  # 解锁密码
-        self.action(c='member', m='resource_unlock', token_uid=210000353508, pwd=pwd)
+        self.action(c='member', m='resource_unlock', pwd=pwd)
 
     @classmethod
     def p(cls, message, c='cls'):
