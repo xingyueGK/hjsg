@@ -10,7 +10,7 @@ idna==2.6
 kombu==4.2.1
 macholib==1.9
 pefile==2017.11.5
-psutil==5.4.7
+psutil==5.6.6
 PyInstaller==3.3.1
 pypiwin32==223
 pytz==2018.5
